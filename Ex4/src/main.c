@@ -33,14 +33,23 @@ main(int argc, char *argv[]) {
 	struct hostent *rem;
     char * path =NULL;
 
+//    FILE * file;
+//    file = fopen("villa.txt", "w");
+//    if (file){
+//        printf("exist");
+//        fclose(file);
+//    }else{
+//        printf("notexist");
+//        //file doesn't exists or cannot be opened (es. you don't have access permission )
+//    }
 
 
-	sprintf(test, "HTTP/1.0 200 OK\r\n");    //line:netp:servestatic:beginserve
-   	sprintf(test, "%sServer: Sysstatd Web Server\r\n", test);
-   	sprintf(test, "%sContent-length: 211\r\n", test);
-	sprintf(test, "%sConnection: keep-alive\r\n", test);
-	sprintf(test, "%sContent-type: text/html\r\n\r\n", test);
-	sprintf(test, "%s<html><head><title>It worked!!!</title></head><body><h1>Yes, It worked!!!</h1></body></html>",test);
+//	sprintf(test, "HTTP/1.0 200 OK\r\n");    //line:netp:servestatic:beginserve
+//   	sprintf(test, "%sServer: Sysstatd Web Server\r\n", test);
+//   	sprintf(test, "%sContent-length: 211\r\n", test);
+//	sprintf(test, "%sConnection: keep-alive\r\n", test);
+//	sprintf(test, "%sContent-type: text/html\r\n\r\n", test);
+//	sprintf(test, "%s<html><head><title>It worked!!!</title></head><body><h1>Yes, It worked!!!</h1></body></html>",test);
 
 
 
@@ -108,8 +117,10 @@ main(int argc, char *argv[]) {
 
 				printf("Read string: \n%s\n", buf);
                 tokenize(&path,buf);
+                path++;
                 printf("***********\n%s\n",path);
-
+                execute(path,test);
+                printf("***********\n%s\n",test);
 				//reverse(buf); /* Reverse message */
 
 
