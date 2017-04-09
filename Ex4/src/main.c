@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sudo_plugin.h>
 #include "functions.h"
 
 void reverse(char *);
@@ -32,6 +33,7 @@ main(int argc, char *argv[]) {
 	struct sockaddr *serverptr, *clientptr;
 	struct hostent *rem;
     char * path =NULL;
+    char * type =NULL;
 
 //    FILE * file;
 //    file = fopen("villa.txt", "w");
@@ -116,10 +118,13 @@ main(int argc, char *argv[]) {
 				}
 
 				printf("Read string: \n%s\n", buf);
-                tokenize(&path,buf);
+                tokenize(&path,&type,buf);
                 path++;
                 printf("***********\n%s\n",path);
-                execute(path,test);
+                printf("***********\n%s\n",type);
+                //printf("8888 %s 8888888888",get_filename_ext(path));
+                findMIME(path,NULL);
+                execute(path,type,test);
                 printf("***********\n%s\n",test);
 				//reverse(buf); /* Reverse message */
 

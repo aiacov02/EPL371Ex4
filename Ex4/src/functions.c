@@ -8,6 +8,27 @@
 #include <fnmatch.h>
 #include "functions.h"
 
+
+
+
+const char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot + 1;
+}
+
+void findMIME(char *filename, char **MIME){
+    char *temp;
+    char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) temp = "";
+    else temp = dot + 1;
+
+    if(temp=="")
+        printf("aktinidio");
+    else
+    printf("eXtension: %s", temp);
+}
+
 unsigned int countFileLength(FILE *fp){
     fseek(fp, 0, SEEK_END);
     unsigned int length = ftell(fp);
@@ -15,26 +36,32 @@ unsigned int countFileLength(FILE *fp){
 }
 
 
-void tokenize(char **path, char *buf){
-    char * pch;
+void tokenize(char **path, char **RequestType, char *buf) {
+    char *pch;
 
-    pch = strtok (buf," ");
-    int myflag=0;
-    while (pch != NULL){
+    pch = strtok(buf, " ");
+    int myflag = 0;
+
+
+
+    * RequestType= pch;
+
+    while (pch != NULL) {
 
         if(myflag){
             *path = pch;
             myflag=0;
         }
-        if(strcmp(pch,"GET")==0){
+        if(strcmp(pch,"GET")==0 || strcmp(pch,"HEAD")==0 || strcmp(pch,"DELETE")==0){
             myflag=1;
         }
         pch = strtok (NULL, " ");
-    }
 
+    }
 }
 
-void execute(char * path,char* action ){
+
+void execute(char * path,char * type, char* action ){
 
 
 
