@@ -22,7 +22,7 @@ void reverse(char *);
 
 
 
-char test[1024];
+//char message[1024];
 
 // function prototype for reversing func.
 /* Server with Internet stream sockets */
@@ -34,6 +34,10 @@ main(int argc, char *argv[]) {
 	struct hostent *rem;
     char * path =NULL;
     char * type =NULL;
+    char * filetype =NULL;
+    char * message=NULL;
+    char * body=NULL;
+    int  havebody;
 
 //    FILE * file;
 //    file = fopen("villa.txt", "w");
@@ -88,6 +92,7 @@ main(int argc, char *argv[]) {
 	printf("Listening for connections to port %d\n", port);
 
 	while (1) {
+        havebody = 0;
 		clientptr = (struct sockaddr *) &client;
 		clientlen = sizeof(client);
 		/* Accept connection */
@@ -122,18 +127,26 @@ main(int argc, char *argv[]) {
                 path++;
                 printf("***********\n%s\n",path);
                 printf("***********\n%s\n",type);
-                //printf("8888 %s 8888888888",get_filename_ext(path));
-                findMIME(path,NULL);
-                execute(path,type,test);
-                printf("***********\n%s\n",test);
+                findMIME(path,&filetype);
+                //findMIME(path,NULL);
+                //printf("cccccccccc%sccccccccccc",filetype);
+                execute(path,type,filetype,&message,&body,&havebody);
+                printf("***********\n%s\n",message);
 				//reverse(buf); /* Reverse message */
 
 
-				if (write(newsock, test, sizeof(test)) < 0) {/* Send message */
+				if (write(newsock, message,strlen(message)+1) < 0) {/* Send message */
 					perror("write");
 					exit(1);
 				}
+                if(havebody==1) {
+                    if (write(newsock, body, strlen(body) + 1) < 0) {/* Send message */
+                        perror("write");
+                        exit(1);
+                    }
+                }
 
+                free(message);
 			} while (strcmp(buf, "end") != 0); /*Finish on "end" message*/
 			close(newsock); /* Close socket */
 			exit(0);
