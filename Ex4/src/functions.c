@@ -8,6 +8,38 @@
 #include <fnmatch.h>
 #include "functions.h"
 
+void getSettings(int *port, char **ServerPath, int *numOfThreads){
+    FILE *fp;
+    fp = fopen("conf.txt","r");
+    if(!fp){
+        perror("Error");
+        exit(EXIT_FAILURE);
+    }
+
+    char line1[256];
+    char line2[256];
+    char line3[256];
+
+    (fgets(line1, sizeof(line1), fp));
+    *port = atoi(line1);
+    if(*port<=0){
+        fprintf(stderr, "Number of ports must be positive number");
+        exit(EXIT_FAILURE);
+    }
+
+    (fgets(line2, sizeof(line2), fp));
+    *ServerPath = line2;
+
+    (fgets(line3, sizeof(line3), fp));
+    *numOfThreads = atoi(line3);
+    if(*numOfThreads<=0){
+        fprintf(stderr, "Number of threads must be bigger than 1");
+        exit(EXIT_FAILURE);
+    }
+
+
+}
+
 
 void findMIME(char *filename, char **MIME){
     char *temp;
@@ -94,13 +126,14 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
         //printf("\n\ninside GET $$$$$$$$$$$$$$$$$$$$\n\n");
 
         if (strcmp(filetype,"text/html") == 0){
-            * havebody=1;
+
             //printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
             unsigned int length;
             FILE * file;
             file = fopen(path, "rb");
 
             if (file){
+                * havebody=1;
                 length = countFileLength(file);
                 printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
                 * action = malloc(length + 356);
@@ -121,16 +154,25 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
 
                 return;
             }
+
+
             else{
-//                sprintf(action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
-//                sprintf(action, "%sServer: Sysstatd Web Server\r\n", action);
-//                sprintf(action, "%sContent-length: 20\r\n", action);
-//                sprintf(action, "%sConnection: keep-alive\r\n", action);
-//                sprintf(action, "%sContent-type: text/plain\r\n\r\n", action);
-//                sprintf(action, "%sDocument not found!\r\n\r\n", action);
+                * action = malloc(length + 356);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                return;
             }
 
+            if (strcmp(filetype,"text/html") == 0){
 
+
+
+
+            }
 
 
         }
