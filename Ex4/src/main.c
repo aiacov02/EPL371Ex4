@@ -29,21 +29,21 @@ char * serverpath=NULL;
 /* Server with Internet stream sockets */
 main(int argc, char *argv[]) {
 	int port, sock, newsock, serverlen, clientlen;
-	char buf[2560];
+	//char buf[2560];
 	struct sockaddr_in server, client;
 	struct sockaddr *serverptr, *clientptr;
 	struct hostent *rem;
-    char * path =malloc(787);
-    char * type =NULL;
-    char * filetype =NULL;
-    char * message=NULL;
-    char * body=NULL;
+//    char * path =malloc(787);
+//    char * type =NULL;
+//    char * filetype =NULL;
+//    char * message=NULL;
+//    char * body=NULL;
 
 
 
     int numofthreads;
-    int  havebody;
-    unsigned int filesize;
+//    int  havebody;
+//    unsigned int filesize;
 
 
 //    FILE * file;
@@ -115,8 +115,8 @@ main(int argc, char *argv[]) {
 
 	while (1) {
 
-        printf("\nThe server path is : %skkkkkkkkkkkkkkk",serverpath);
-        havebody = 0;
+
+        //havebody = 0;
 		clientptr = (struct sockaddr *) &client;
 		clientlen = sizeof(client);
 		/* Accept connection */
@@ -131,7 +131,7 @@ main(int argc, char *argv[]) {
 
 			exit(1);
 		}
-		printf("Accepted connection from %s\n", rem->h_name);
+		printf("\nAccepted connection from %s\n", rem->h_name);
 
 		/* Create child for serving the client */
 		switch (fork()) {
@@ -141,48 +141,60 @@ main(int argc, char *argv[]) {
 		case 0: /* Child process */
 
 			do {
-				bzero(buf, sizeof(buf)); /* Initialize buffer */
-				if (read(newsock, buf, sizeof(buf)) < 0) { /* Get message */
-					perror("read");
-					exit(1);
-				}
-                if(strlen(buf)==0){
-                    exit(EXIT_FAILURE);
-                }
-                getSettings(&port,&serverpath,&numofthreads);
-				printf("Read string: \n%s\n", buf);
-                tokenize(&path,&type,buf);
-                path++;
-                newpath = malloc(356);
-                strcpy(newpath,  serverpath);
-                strcat(newpath,"/");
-                strcat(newpath,path);
-
-                printf("\n********************THE FULL PATH IS : %s *************************",newpath);
-                printf("***********\n%s\n",path);
-                printf("***********\n%s\n",type);
-                findMIME(path,&filetype);
-                //findMIME(path,NULL);
-                printf("\ncccccccccc %s ccccccccccc\n",filetype);
-                execute(newpath,type,filetype,&message,&body,&havebody,&filesize);
-                printf("\n***********\n%s\n",message);
-				printf("\n******\n%s\n*****\n",body);
-
-
-				if (write(newsock, message,strlen(message)) < 0) {/* Send message */
-					perror("write");
-					exit(1);
-				}
-                if(havebody==1 && strcmp(type,"HEAD") != 0) {
-                    if (write(newsock, body, filesize + 1) < 0) {/* Send message */
-                        perror("write");
-                        exit(1);
-                    }
-                }
-                free(newpath);
-                free(message);
-                free(body);
-			} while (strcmp(buf, "end") != 0); /*Finish on "end" message*/
+                threadplay (&newsock ,& port,&serverpath , &numofthreads);
+                //threadplay (&newsock ,&port,&serverpath ,&numofthreads,&path,&type,&newpath,&filetype, &message, &body,&havebody,&filesize);
+//				bzero(buf, sizeof(buf)); /* Initialize buffer */
+//				if (read(newsock, buf, sizeof(buf)) < 0) { /* Get message */
+//					perror("read");
+//					exit(1);
+//				}
+//                if(strlen(buf)==0){
+//                    exit(EXIT_FAILURE);
+//                }
+//                getSettings(&port,&serverpath,&numofthreads);
+//                printf("\nThe server path inside FORK is : %s \n\n",serverpath);
+//				printf("\nRead string: ****%s***\n", buf);
+//                tokenize(&path,&type,buf);
+//                printf("\nThe FULL PATH OUTSIDE TOKENIZE IS : ***** %s *****\n",path);
+//                path++;
+//                newpath = malloc(356);
+//                strcpy(newpath,  serverpath);
+//                strcat(newpath,"/");
+//                strcat(newpath,path);
+//
+//                printf("\n********************THE FULL PATH IS : %s *************************",newpath);
+//                printf("***********\n%s\n",path);
+//                printf("***********\n%s\n",type);
+//                findMIME(path,&filetype);
+//                //findMIME(path,NULL);
+//                printf("\ncccccccccc %s ccccccccccc\n",filetype);
+//                execute(newpath,type,filetype,&message,&body,&havebody,&filesize);
+//                printf("\n***********\n%s\n",message);
+//				printf("\n******\n%s\n*****\n",body);
+//
+//                printf("\nTHE HAVEBODY VALUE before write is : %d \n",havebody);
+//
+//				if (write(newsock, message,strlen(message)) < 0) {/* Send message */
+//					perror("write");
+//					exit(1);
+//				}
+//                if(havebody==1 && strcmp(type,"HEAD") != 0) {
+//                    if (write(newsock, body, filesize + 1) < 0) {/* Send message */
+//                        perror("write");
+//                        exit(1);
+//                    }
+//                }
+//                if(newpath!=NULL) {
+//                    free(newpath);
+//                }
+//
+//                if(message!=NULL) {
+//                    free(message);
+//                }
+//                if (havebody==1) {
+//                    free(body);
+//                }
+			} while (1); /*Finish on "end" message*/
 			close(newsock); /* Close socket */
 			exit(0);
 		} /* end of switch */

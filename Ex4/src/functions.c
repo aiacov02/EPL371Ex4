@@ -1,12 +1,80 @@
 #include <string.h>
-#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
-#include <pwd.h>
-#include <grp.h>
-#include <fnmatch.h>
+#include <unistd.h>
 #include "functions.h"
+
+    void threadplay (int * newsock ,int * port,char ** serverpath , int * numofthreads){
+
+        char buf[2560];
+        char * newpath;
+        char * path =malloc(787);
+        char * type =NULL;
+        char * filetype =NULL;
+        char * message=NULL;
+        char * body=NULL;
+        int  havebody=0;
+        unsigned int filesize;
+
+
+
+
+        bzero(buf, sizeof(buf)); /* Initialize buffer */
+				if (read(*newsock, buf, sizeof(buf)) < 0) { /* Get message */
+					perror("read");
+					exit(1);
+				}
+                if(strlen(buf)==0){
+                    exit(EXIT_FAILURE);
+                }
+                getSettings(port,serverpath,numofthreads);
+                printf("\nThe server path inside FUNCTION is : %s \n",*serverpath);
+                printf("\nThe PORT inside FUNCTION is : %s \n",*serverpath);
+                printf("\nThe server path inside FUNCTION is : %s \n\n",*serverpath);
+				printf("\nRead string: ****%s***\n", buf);
+                tokenize(&path,&type,buf);
+                printf("\nThe FULL PATH OUTSIDE TOKENIZE IS : ***** %s *****\n",path);
+                path++;
+                newpath = malloc(356);
+                strcpy(newpath,  *serverpath);
+                strcat(newpath,"/");
+                strcat(newpath,path);
+
+                printf("\n********************THE FULL PATH IS : %s *************************",newpath);
+                printf("***********\n%s\n",path);
+                printf("***********\n%s\n",type);
+                findMIME(path,&filetype);
+                //findMIME(path,NULL);
+                printf("\ncccccccccc %s ccccccccccc\n",filetype);
+                execute(newpath,type,filetype,&message,&body,&havebody,&filesize);
+                printf("\n***********\n%s\n",message);
+				printf("\n******\n%s\n*****\n",body);
+
+                printf("\nTHE HAVEBODY VALUE before write is : %d \n",havebody);
+
+				if (write(*newsock, message,strlen(message)) < 0) {/* Send message */
+					perror("write");
+					exit(1);
+				}
+                if(havebody==1 && strcmp(type,"HEAD") != 0) {
+                    if (write(*newsock, body, filesize + 1) < 0) {/* Send message */
+                        perror("write");
+                        exit(1);
+                    }
+                }
+                if(newpath!=NULL) {
+                    free(newpath);
+                }
+
+                if(message!=NULL) {
+                     free(message);
+                }
+                if (havebody==1) {
+                    free(body);
+                }
+
+}
+
 
 void getSettings(int *port, char **ServerPath, int *numOfThreads){
     FILE *fp;
@@ -106,26 +174,42 @@ unsigned int countFileLength(FILE *fp){
 
 void tokenize(char **path, char **RequestType, char *buf) {
     char *pch;
+    int i =0;
+
+    while ( i != strlen(buf) ){
+        if (buf[i]=='\n'){
+            buf[i]=' ';
+        }
+        if (buf[i]=='\r'){
+            buf[i]=' ';
+        }
+        i++;
+    }
 
     pch = strtok(buf, " ");
-    int myflag = 0;
-
-
-*path = "nothing";
     * RequestType= pch;
+    pch = strtok (NULL, " ");
+    * path = pch;
 
-    while (pch != NULL) {
 
-        if(myflag){
-            *path = pch;
-            myflag=0;
-        }
-        if(strcmp(pch,"GET")==0 || strcmp(pch,"HEAD")==0 || strcmp(pch,"DELETE")==0){
-            myflag=1;
-        }
-        pch = strtok (NULL, " ");
+//    int myflag = 0;
 
-    }
+
+//*path = "nothing";
+//    * RequestType= pch;
+//
+////    while (pch != NULL) {
+//
+//        if(myflag){
+//            *path = pch;
+//            myflag=0;
+//        }
+//        if(strcmp(pch,"GET")==0 || strcmp(pch,"HEAD")==0 || strcmp(pch,"DELETE")==0){
+//            myflag=1;
+//        }
+//        pch = strtok (NULL, " ");
+//
+//    }
 }
 
 
@@ -448,6 +532,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
     sprintf(*action, "%sConnection: close\r\n", *action);
     sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
     sprintf(*action, "%sMethod not implemented!\r\n\r\n", *action);
+    *havebody = 0;
     return;
 //    printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
 //    * action = malloc(4355);
