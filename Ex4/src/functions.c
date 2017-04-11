@@ -29,6 +29,10 @@ void getSettings(int *port, char **ServerPath, int *numOfThreads){
 
     (fgets(line2, sizeof(line2), fp));
     *ServerPath = line2;
+    char *pos;
+
+    if ((pos=strchr(*ServerPath, '\n')) != NULL)
+        *pos = '\0';
 
     (fgets(line3, sizeof(line3), fp));
     *numOfThreads = atoi(line3);
@@ -58,22 +62,28 @@ void findMIME(char *filename, char **MIME){
     char applicationOctetStream[25] = "application/octet-stream";
 
     if(!strcmp(temp,"txt") || !strcmp(temp,"sed") || !strcmp(temp,"awk") || !strcmp(temp,"c") || !strcmp(temp,"h")){
-        *MIME = textPlain;
+        *MIME = malloc(11);
+        strcpy(*MIME,  textPlain);
     }
     else if(!strcmp(temp,"html") || !strcmp(temp,"htm")){
-        *MIME = textHtml;
+        *MIME = malloc(10);
+        strcpy(*MIME,  textHtml);
     }
     else if(!strcmp(temp,"jpeg") || !strcmp(temp,"jpg")){
-        *MIME = imageJpeg;
+        *MIME = malloc(11);
+        strcpy(*MIME,  imageJpeg);
     }
     else if(!strcmp(temp,"gif")){
-        *MIME = imageGif;
+        *MIME = malloc(10);
+        strcpy(*MIME,  imageGif);
     }
     else if(!strcmp(temp,"pdf")){
-        *MIME = applicationPDF;
+        *MIME = malloc(16);
+        strcpy(*MIME,  applicationPDF);
     }
     else{
-        *MIME = applicationOctetStream;
+        *MIME = malloc(25);
+        strcpy(*MIME,  applicationOctetStream);
     }
 
     //printf("eXtension: %s", temp);
@@ -101,7 +111,7 @@ void tokenize(char **path, char **RequestType, char *buf) {
     int myflag = 0;
 
 
-
+*path = "nothing";
     * RequestType= pch;
 
     while (pch != NULL) {
@@ -119,10 +129,12 @@ void tokenize(char **path, char **RequestType, char *buf) {
 }
 
 
-void execute(char * path,char * type,char * filetype, char** action,char ** body,int * havebody ){
+void execute(char * path,char * type,char * filetype, char** action,char ** body,int * havebody, unsigned int * filesize ){
 
 
-    if (strcmp(type,"GET") == 0) {
+printf("\n\nFILE TYPE: %s\n\n",filetype);
+
+    if (strcmp(type,"GET") == 0 || strcmp(type,"HEAD") == 0) {
         //printf("\n\ninside GET $$$$$$$$$$$$$$$$$$$$\n\n");
 
         if (strcmp(filetype,"text/html") == 0){
@@ -135,6 +147,7 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
             if (file){
                 * havebody=1;
                 length = countFileLength(file);
+                *filesize=length;
                 printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
                 * action = malloc(length + 356);
                 * body = malloc(length+87);
@@ -157,7 +170,7 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
 
 
             else{
-                * action = malloc(length + 356);
+                * action = malloc(656);
                 sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
                 sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
                 sprintf(*action, "%sContent-length: 20\r\n", *action);
@@ -167,21 +180,275 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
                 return;
             }
 
-            if (strcmp(filetype,"text/html") == 0){
 
 
 
+        }
 
+
+        if (strcmp(filetype,"text/plain") == 0){
+            unsigned int length;
+            FILE * file;
+            file = fopen(path, "rb");
+
+
+            if (file){
+                  printf("\niparxei\n");
+                * havebody=1;
+                length = countFileLength(file);
+                *filesize=length;
+                printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                * action = malloc(length + 356);
+                * body = malloc(length+87);
+
+                sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+                sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+
+                fclose(file);
+
+
+                file = fopen(path, "rb");
+                fread(*body,length,1,file);
+                printf("\n\nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxxxxxxx\n\n",*body);
+
+                return;
             }
 
 
+            else{
+                printf("\nDEN iparxei\n");
+                * action = malloc(656);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                return;
+            }
+
+
+        }
+
+        if (strcmp(filetype,"image/jpeg") == 0){
+            unsigned int length;
+            FILE * file;
+            file = fopen(path, "rb");
+
+
+            if (file){
+                printf("\niparxei\n");
+                * havebody=1;
+                length = countFileLength(file);
+                *filesize=length;
+                printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                * action = malloc(length + 356);
+                * body = malloc(length+87);
+
+                sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+                sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: image/jpeg\r\n\r\n", *action);
+
+                fclose(file);
+
+
+                file = fopen(path, "rb");
+                fread(*body,length,1,file);
+                printf("\n\nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxxxxxxx\n\n",*body);
+
+                return;
+            }
+
+
+            else{
+                * action = malloc(656);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                return;
+            }
+
+
+        }
+
+        if (strcmp(filetype,"image/gif") == 0){
+            unsigned int length;
+            FILE * file;
+            file = fopen(path, "rb");
+
+
+            if (file){
+                printf("\niparxei\n");
+                * havebody=1;
+                length = countFileLength(file);
+                *filesize=length;
+                printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                * action = malloc(length + 356);
+                * body = malloc(length+87);
+
+                sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+                sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: image/gif\r\n\r\n", *action);
+
+                fclose(file);
+
+
+                file = fopen(path, "rb");
+                fread(*body,length,1,file);
+                printf("\n\nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxxxxxxx\n\n",*body);
+
+                return;
+            }
+
+
+            else{
+                * action = malloc(656);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                return;
+            }
+
+
+        }
+
+        if (strcmp(filetype,"application/pdf") == 0){
+            unsigned int length;
+            FILE * file;
+            file = fopen(path, "rb");
+
+
+            if (file){
+                printf("\niparxei\n");
+                * havebody=1;
+                length = countFileLength(file);
+                *filesize=length;
+                printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                * action = malloc(length + 356);
+                * body = malloc(length+87);
+
+                sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+                sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: application/pdf\r\n\r\n", *action);
+
+                fclose(file);
+
+
+                file = fopen(path, "rb");
+                fread(*body,length,1,file);
+                printf("\n\nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxxxxxxx\n\n",*body);
+
+                return;
+            }
+
+
+            else{
+                * action = malloc(656);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                return;
+            }
+
+
+        }
+
+        unsigned int length;
+        FILE * file;
+        file = fopen(path, "rb");
+
+
+        if (file){
+            * havebody=1;
+            length = countFileLength(file);
+            *filesize=length;
+            printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+            * action = malloc(length + 356);
+            * body = malloc(length+87);
+
+            sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+            sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+            sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+            sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+            sprintf(*action, "%sContent-type: application/octet-stream\r\n\r\n", *action);
+
+            fclose(file);
+
+
+            file = fopen(path, "rb");
+            fread(*body,length,1,file);
+            printf("\n\nxxxxxxxxxxxxxx\n%s\nxxxxxxxxxxxxxxxxxx\n\n",*body);
+
+            return;
+        }
+
+
+        else{
+            * action = malloc(656);
+            sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+            sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+            sprintf(*action, "%sContent-length: 20\r\n", *action);
+            sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+            sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+            sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+            return;
+        }
+
+    }
+
+
+    if (strcmp(type,"DELETE") == 0) {
+        printf("\nThe file for delete is: %s\n",path);
+
+        int status = remove(path);
+
+        if( status == 0 ) {
+            printf("\n %s file deleted successfully.\n", path);
+            * action = malloc(356);
+            sprintf(*action, "HTTP/1.1 200 OK\r\n");
+            return;
+        }
+        else
+        {
+            * action = malloc(656);
+            sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+            sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+            sprintf(*action, "%sContent-length: 20\r\n", *action);
+            sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+            sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+            sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+            return;
         }
 
 
 
 
     }
-
+    * action = malloc(656);
+    sprintf(*action, "HTTP/1.1 501 Not Implemented\r\n");    //line:netp:servestatic:beginserve
+    sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+    sprintf(*action, "%sConnection: close\r\n", *action);
+    sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+    sprintf(*action, "%sMethod not implemented!\r\n\r\n", *action);
+    return;
 //    printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
 //    * action = malloc(4355);
 //

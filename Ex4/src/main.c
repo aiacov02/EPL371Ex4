@@ -21,9 +21,10 @@ void reverse(char *);
 
 
 
-
+//char newpath[1000];
 //char message[1024];
-
+char * newpath;
+char * serverpath=NULL;
 // function prototype for reversing func.
 /* Server with Internet stream sockets */
 main(int argc, char *argv[]) {
@@ -32,12 +33,18 @@ main(int argc, char *argv[]) {
 	struct sockaddr_in server, client;
 	struct sockaddr *serverptr, *clientptr;
 	struct hostent *rem;
-    char * path =NULL;
+    char * path =malloc(787);
     char * type =NULL;
     char * filetype =NULL;
     char * message=NULL;
     char * body=NULL;
+
+
+
+    int numofthreads;
     int  havebody;
+    unsigned int filesize;
+
 
 //    FILE * file;
 //    file = fopen("villa.txt", "w");
@@ -59,10 +66,10 @@ main(int argc, char *argv[]) {
 
 
 
-	if (argc < 2) { /* Check if server's port number is given */
-		printf("Please give the port number \n");
-		exit(1);
-	}
+//	if (argc < 2) { /* Check if server's port number is given */
+//		printf("Please give the port number \n");
+//		exit(1);
+//	}
 
 	/* Create socket */
 	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
@@ -70,8 +77,23 @@ main(int argc, char *argv[]) {
 		exit(1);
 	}
 	/* Convert port number to integer */
-	port = atoi(argv[1]);
-	server.sin_family = PF_INET; /* Internet domain */
+	getSettings(&port,&serverpath,&numofthreads);
+
+    printf("\n*********************************************");
+    printf("\nCHECK GET SETTINGS FUNCTION");
+    printf("\nThe port is : %d",port);
+    printf("\nThe server path is : %s",serverpath);
+    printf("\nThe number of threds is : %d",numofthreads);
+    printf("\n*********************************************\n\n");
+
+
+    //port = atoi(argv[1]);
+    //strcpy(newpath,  serverpath);
+    //strcat(newpath,"/");
+    //strcat(newpath,path);
+    //printf("\n********************THE FULL PATH IS : %s*************************",newpath);
+
+    server.sin_family = PF_INET; /* Internet domain */
 	server.sin_addr.s_addr = htonl(INADDR_ANY); /* My Internet address */
 	server.sin_port = htons(port); /* The given port */
 	serverptr = (struct sockaddr *) &server;
@@ -92,6 +114,8 @@ main(int argc, char *argv[]) {
 	printf("Listening for connections to port %d\n", port);
 
 	while (1) {
+
+        printf("\nThe server path is : %skkkkkkkkkkkkkkk",serverpath);
         havebody = 0;
 		clientptr = (struct sockaddr *) &client;
 		clientlen = sizeof(client);
@@ -115,38 +139,49 @@ main(int argc, char *argv[]) {
 			perror("fork");
 			exit(1);
 		case 0: /* Child process */
+
 			do {
 				bzero(buf, sizeof(buf)); /* Initialize buffer */
 				if (read(newsock, buf, sizeof(buf)) < 0) { /* Get message */
 					perror("read");
 					exit(1);
 				}
-
+                if(strlen(buf)==0){
+                    exit(EXIT_FAILURE);
+                }
+                getSettings(&port,&serverpath,&numofthreads);
 				printf("Read string: \n%s\n", buf);
                 tokenize(&path,&type,buf);
                 path++;
+                newpath = malloc(356);
+                strcpy(newpath,  serverpath);
+                strcat(newpath,"/");
+                strcat(newpath,path);
+
+                printf("\n********************THE FULL PATH IS : %s *************************",newpath);
                 printf("***********\n%s\n",path);
                 printf("***********\n%s\n",type);
                 findMIME(path,&filetype);
                 //findMIME(path,NULL);
-                //printf("cccccccccc%sccccccccccc",filetype);
-                execute(path,type,filetype,&message,&body,&havebody);
-                printf("***********\n%s\n",message);
-				//reverse(buf); /* Reverse message */
+                printf("\ncccccccccc %s ccccccccccc\n",filetype);
+                execute(newpath,type,filetype,&message,&body,&havebody,&filesize);
+                printf("\n***********\n%s\n",message);
+				printf("\n******\n%s\n*****\n",body);
 
 
-				if (write(newsock, message,strlen(message)+1) < 0) {/* Send message */
+				if (write(newsock, message,strlen(message)) < 0) {/* Send message */
 					perror("write");
 					exit(1);
 				}
-                if(havebody==1) {
-                    if (write(newsock, body, strlen(body) + 1) < 0) {/* Send message */
+                if(havebody==1 && strcmp(type,"HEAD") != 0) {
+                    if (write(newsock, body, filesize + 1) < 0) {/* Send message */
                         perror("write");
                         exit(1);
                     }
                 }
-
+                free(newpath);
                 free(message);
+                free(body);
 			} while (strcmp(buf, "end") != 0); /*Finish on "end" message*/
 			close(newsock); /* Close socket */
 			exit(0);
