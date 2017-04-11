@@ -29,26 +29,26 @@
                 }
                 getSettings(port,serverpath,numofthreads);
                 printf("\nThe server path inside FUNCTION is : %s \n",*serverpath);
-                printf("\nThe PORT inside FUNCTION is : %s \n",*serverpath);
-                printf("\nThe server path inside FUNCTION is : %s \n\n",*serverpath);
+                printf("\nThe PORT inside FUNCTION is : %d \n",*port);
+                printf("\nThe NUMBER OF THREADS inside FUNCTION is : %d \n\n",*numofthreads);
 				printf("\nRead string: ****%s***\n", buf);
                 tokenize(&path,&type,buf);
-                printf("\nThe FULL PATH OUTSIDE TOKENIZE IS : ***** %s *****\n",path);
+                printf("\nThe PATH OUTSIDE TOKENIZE IS : *****%s*****\n",path);
                 path++;
                 newpath = malloc(356);
                 strcpy(newpath,  *serverpath);
                 strcat(newpath,"/");
                 strcat(newpath,path);
 
-                printf("\n********************THE FULL PATH IS : %s *************************",newpath);
-                printf("***********\n%s\n",path);
-                printf("***********\n%s\n",type);
+                printf("\nTHE FULL PATH IS : ******%s*****\n",newpath);
+                //printf("***********\n%s\n",path);
+                printf("\nTHE TYPE OF REQUEST IS : %s\n",type);
                 findMIME(path,&filetype);
                 //findMIME(path,NULL);
-                printf("\ncccccccccc %s ccccccccccc\n",filetype);
+                printf("\nTHE FILE TYPE OF MIME IS: ****%s****\n",filetype);
                 execute(newpath,type,filetype,&message,&body,&havebody,&filesize);
                 printf("\n***********\n%s\n",message);
-				printf("\n******\n%s\n*****\n",body);
+				printf("\nTHE BODY OUTSIDE EXECUTE IS:\n%s\n*****\n",body);
 
                 printf("\nTHE HAVEBODY VALUE before write is : %d \n",havebody);
 
@@ -232,7 +232,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 * havebody=1;
                 length = countFileLength(file);
                 *filesize=length;
-                printf("\n\n^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                printf("\n\nTHE LENGTH INSIDE EXECUTE IS :^^^^^^^^^%d^^^^^^^^^^\n\n",length);
                 * action = malloc(length + 356);
                 * body = malloc(length+87);
 
@@ -247,7 +247,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
 
                 file = fopen(path, "rb");
                 fread(*body,length, 1, file);
-                printf("\n\nxxxxxxxxxxxxxx %s xxxxxxxxxxxxxxxxxx\n\n",*body);
+                printf("\n\nTHE BODY INSIDE EXECUTE IS :\n%s\n\n",*body);
 
                 return;
             }
