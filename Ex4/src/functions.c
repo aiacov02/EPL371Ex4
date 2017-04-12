@@ -1,18 +1,16 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+
 #include "functions.h"
 
-    void threadplay (int * newsock ,int * port,char ** serverpath , int * numofthreads){
+    void threadplay (int * x,int * newsock ,int * port,char ** serverpath , int * numofthreads){
 
         char buf[2560];
         char * newpath;
-        char * path =malloc(787);
+        char * path;
         char * type =NULL;
         char * filetype =NULL;
         char * message=NULL;
         char * body=NULL;
+        char * contype;
         int  havebody=0;
         unsigned int filesize;
 
@@ -25,15 +23,36 @@
 					exit(1);
 				}
                 if(strlen(buf)==0){
-                    exit(EXIT_FAILURE);
+//                    if(path!=NULL) {
+//                        free(path);
+//                    }
+                    *x=1;
+                    return;
                 }
+
+                if(*serverpath == NULL){
+
+                    free(*serverpath);
+                }
+
                 getSettings(port,serverpath,numofthreads);
                 printf("\nThe server path inside FUNCTION is : %s \n",*serverpath);
                 printf("\nThe PORT inside FUNCTION is : %d \n",*port);
                 printf("\nThe NUMBER OF THREADS inside FUNCTION is : %d \n\n",*numofthreads);
 				printf("\nRead string: ****%s***\n", buf);
-                tokenize(&path,&type,buf);
+                tokenize(&contype,&path,&type,buf);
                 printf("\nThe PATH OUTSIDE TOKENIZE IS : *****%s*****\n",path);
+                printf("\nThe CONNECTION TYPE OUTSIDE TOKENIZE IS : *****%s*****\n",contype);
+                printf("\nThe REQUEST TYPE OUTSIDE TOKENIZE IS : *****%s*****\n",type);
+
+                if(strcmp(contype,"close")==0){
+                    *x=1;
+
+                }
+
+                 if(strcmp(contype,"keep-alive")==0){
+                    *x=0;
+                 }
                 path++;
                 newpath = malloc(356);
                 strcpy(newpath,  *serverpath);
@@ -72,6 +91,12 @@
                 if (havebody==1) {
                     free(body);
                 }
+                 if (filetype!=NULL) {
+                    free(filetype);
+                 }
+
+
+        printf("\nTEST\n");
 
 }
 
@@ -96,7 +121,9 @@ void getSettings(int *port, char **ServerPath, int *numOfThreads){
     }
 
     (fgets(line2, sizeof(line2), fp));
-    *ServerPath = line2;
+    *ServerPath= malloc(256);
+    strcpy(*ServerPath,  line2);
+
     char *pos;
 
     if ((pos=strchr(*ServerPath, '\n')) != NULL)
@@ -128,6 +155,7 @@ void findMIME(char *filename, char **MIME){
     char imageGif[10] = "image/gif";
     char applicationPDF[16] = "application/pdf";
     char applicationOctetStream[25] = "application/octet-stream";
+    char textCSS[9] = "text/css";
 
     if(!strcmp(temp,"txt") || !strcmp(temp,"sed") || !strcmp(temp,"awk") || !strcmp(temp,"c") || !strcmp(temp,"h")){
         *MIME = malloc(11);
@@ -136,6 +164,10 @@ void findMIME(char *filename, char **MIME){
     else if(!strcmp(temp,"html") || !strcmp(temp,"htm")){
         *MIME = malloc(10);
         strcpy(*MIME,  textHtml);
+    }
+    else if(!strcmp(temp,"css")){
+        *MIME = malloc(9);
+        strcpy(*MIME,  textCSS);
     }
     else if(!strcmp(temp,"jpeg") || !strcmp(temp,"jpg")){
         *MIME = malloc(11);
@@ -157,11 +189,7 @@ void findMIME(char *filename, char **MIME){
     //printf("eXtension: %s", temp);
 }
 
-const char *get_filename_ext(const char *filename) {
-    const char *dot = strrchr(filename, '.');
-    if(!dot || dot == filename) return "";
-    return dot + 1;
-}
+
 
 
 
@@ -172,9 +200,10 @@ unsigned int countFileLength(FILE *fp){
 }
 
 
-void tokenize(char **path, char **RequestType, char *buf) {
+void tokenize(char ** contype ,char **path, char **RequestType, char *buf) {
     char *pch;
     int i =0;
+    *contype =  NULL;
 
     while ( i != strlen(buf) ){
         if (buf[i]=='\n'){
@@ -191,6 +220,18 @@ void tokenize(char **path, char **RequestType, char *buf) {
     pch = strtok (NULL, " ");
     * path = pch;
 
+    while (pch != NULL) {
+        if(strcmp(pch,"Connection:")==0 ){
+            pch = strtok (NULL, " ");
+            *contype = pch;
+
+        }
+        pch = strtok (NULL, " ");
+    }
+
+    if(*contype == NULL){
+        *contype = "close";
+    }
 
 //    int myflag = 0;
 
@@ -219,11 +260,11 @@ void execute(char * path,char * type,char * filetype, char** action,char ** body
 printf("\n\nFILE TYPE: %s\n\n",filetype);
 
     if (strcmp(type,"GET") == 0 || strcmp(type,"HEAD") == 0) {
-        //printf("\n\ninside GET $$$$$$$$$$$$$$$$$$$$\n\n");
+
 
         if (strcmp(filetype,"text/html") == 0){
 
-            //printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
+
             unsigned int length;
             FILE * file;
             file = fopen(path, "rb");
@@ -261,6 +302,56 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
                 sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
+                return;
+            }
+
+
+
+
+        }
+
+        if (strcmp(filetype,"text/css") == 0){
+
+            //printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
+            unsigned int length;
+            FILE * file;
+            file = fopen(path, "rb");
+
+            if (file){
+                * havebody=1;
+                length = countFileLength(file);
+                *filesize=length;
+                printf("\n\nTHE LENGTH INSIDE EXECUTE IS :^^^^^^^^^%d^^^^^^^^^^\n\n",length);
+                * action = malloc(length + 356);
+                * body = malloc(length+87);
+
+                sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: MY SERVER AD\r\n", *action);
+                sprintf(*action, "%sContent-length: %d\r\n", *action,length);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/css\r\n\r\n", *action);
+                //sprintf(*action, "%s<html><head><title>It worked!!!</title></head><body><h1>Yes, It worked!!!</h1></body></html>",*action);
+                fclose(file);
+
+
+                file = fopen(path, "rb");
+                fread(*body,length, 1, file);
+                printf("\n\nTHE BODY INSIDE EXECUTE IS :\n%s\n\n",*body);
+
+                return;
+            }
+
+
+            else{
+                * action = malloc(656);
+                sprintf(*action, "HTTP/1.1 404 Not Found\r\n");    //line:netp:servestatic:beginserve
+                sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
+                sprintf(*action, "%sContent-length: 20\r\n", *action);
+                sprintf(*action, "%sConnection: keep-alive\r\n", *action);
+                sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
+                sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
                 return;
             }
 
@@ -311,6 +402,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
                 sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
                 return;
             }
 
@@ -357,6 +449,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
                 sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
                 return;
             }
 
@@ -384,6 +477,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: image/gif\r\n\r\n", *action);
 
+
                 fclose(file);
 
 
@@ -403,6 +497,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
                 sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
                 return;
             }
 
@@ -449,6 +544,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
                 sprintf(*action, "%sConnection: keep-alive\r\n", *action);
                 sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
                 sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+                *havebody = 0;
                 return;
             }
 
@@ -493,6 +589,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
             sprintf(*action, "%sConnection: keep-alive\r\n", *action);
             sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
             sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+            *havebody = 0;
             return;
         }
 
@@ -519,6 +616,7 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
             sprintf(*action, "%sConnection: keep-alive\r\n", *action);
             sprintf(*action, "%sContent-type: text/plain\r\n\r\n", *action);
             sprintf(*action, "%sDocument not found!\r\n\r\n", *action);
+            *havebody = 0;
             return;
         }
 
@@ -534,23 +632,84 @@ printf("\n\nFILE TYPE: %s\n\n",filetype);
     sprintf(*action, "%sMethod not implemented!\r\n\r\n", *action);
     *havebody = 0;
     return;
-//    printf("\n\nwwwwwwwwwwwoooooooorrrrrrrrrrrrkkkkk\n\n");
-//    * action = malloc(4355);
-//
-//        sprintf(*action, "HTTP/1.1 200 OK\r\n");    //line:netp:servestatic:beginserve
-//        sprintf(*action, "%sServer: Sysstatd Web Server\r\n", *action);
-//        sprintf(*action, "%sContent-length: 211\r\n", *action);
-//        sprintf(*action, "%sConnection: keep-alive\r\n", *action);
-//        sprintf(*action, "%sContent-type: text/html\r\n\r\n", *action);
-//        //sprintf(*action, "%s<html><head><title>It worked!!!</title></head><body><h1>Yes, It worked!!!</h1></body></html>",*action);
-//
-//    * body = malloc(4355);
-//
-//
 
 
 
 
 }
 
+//int main(){
+//    char * reqtype;
+//    char * path;
+//    char * contype;
+//    char *MIME;
+//    char buf [] = "GET /index.html Connection: keep-alive";
+//    char buf2 [] = "HEAD /index.html Connection: close";
+//
+//    printf("\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//    printf("   **********TEST FOR FUNCTION TOKENIZE**********");
+//
+//    printf("\n\nThe request message 1 is : %s",buf);
+//    tokenize(&contype,&path,&reqtype,buf);
+//
+//    printf("\nThe request type is : %s",reqtype);
+//    printf("\nThe path is: *****%s*****",path);
+//    printf("\nThe Connection Type is: ****%s****\n",contype);
+//    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//
+//    printf("\n\nThe request message 2 is : %s",buf2);
+//    tokenize(&contype,&path,&reqtype,buf2);
+//
+//    printf("\nThe request type is : %s",reqtype);
+//    printf("\nThe path is: *****%s*****",path);
+//    printf("\nThe Connection Type is: ****%s****\n",contype);
+//    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//
+//
+//    printf("\n   **********TEST FOR FUNCTION FINDMIME**********");
+//
+//    printf("\n\nThe file 1 is: test.html\n");
+//    findMIME("test.html",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.css\n");
+//    findMIME("test.css",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.gif\n");
+//    findMIME("test.gif",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.jpg\n");
+//    findMIME("test.jpg",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.txt\n");
+//    findMIME("test.txt",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.pdf\n");
+//    findMIME("test.pdf",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("\nThe file 1 is: test.no\n");
+//    findMIME("test.no",&MIME);
+//    printf("The MIME is : %s\n",MIME);
+//
+//    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//
+//    printf("\n   **********TEST FOR FUNCTION GET SETTINGS**********");
+//    int port;
+//    char *serverPath;
+//    int NumOfThreads;
+//
+//
+//    getSettings(&port, &serverPath, &NumOfThreads);
+//    //printf("%d , %s, %d", port, serverPath, NumOfThreads);
+//    printf("\n THE NUMBER OF PORT FOR cond.txt IS: %d",port);
+//    printf("\n THE SERVER PATH FOR cond.txt IS: %s",serverPath);
+//    printf("\n THE NUMBER OF PORT FOR cond.txt IS: %d\n",NumOfThreads);
+//    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//
+//}
 

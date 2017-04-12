@@ -1,3 +1,4 @@
+#ifdef DEBUG2
 /* File:
  server.c
  */
@@ -27,7 +28,7 @@ char * newpath;
 char * serverpath=NULL;
 // function prototype for reversing func.
 /* Server with Internet stream sockets */
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
 	int port, sock, newsock, serverlen, clientlen;
 	//char buf[2560];
 	struct sockaddr_in server, client;
@@ -78,7 +79,7 @@ main(int argc, char *argv[]) {
 	}
 	/* Convert port number to integer */
 	getSettings(&port,&serverpath,&numofthreads);
-
+    int x =0;
     printf("\n*********************************************");
     printf("\nCHECK GET SETTINGS FUNCTION");
     printf("\nThe port is : %d",port);
@@ -141,7 +142,7 @@ main(int argc, char *argv[]) {
 		case 0: /* Child process */
 
 			do {
-                threadplay (&newsock ,& port,&serverpath , &numofthreads);
+                threadplay (&x,&newsock ,& port,&serverpath , &numofthreads);
                 //threadplay (&newsock ,&port,&serverpath ,&numofthreads,&path,&type,&newpath,&filetype, &message, &body,&havebody,&filesize);
 //				bzero(buf, sizeof(buf)); /* Initialize buffer */
 //				if (read(newsock, buf, sizeof(buf)) < 0) { /* Get message */
@@ -210,3 +211,5 @@ main(int argc, char *argv[]) {
 //		s[j] = c;
 //	}
 //}
+
+#endif
